@@ -1,12 +1,14 @@
 // http.js — HTTP routes for the local server.
-// Right now this is intentionally tiny: health check only, no UI yet.
+// Step 3 adds the first real state API: create/list games for the DM dashboard.
 
 import express from 'express';
 
-export function createApp({ tables, serverVersion, protocolVersion }) {
+import { registerGameRoutes } from './routes/games.js';
+
+export function createApp({ tables, serverVersion, protocolVersion, gameStore }) {
   const app = express();
 
-  // JSON parsing is enabled now so later API actions use the same server foundation.
+  // JSON parsing is enabled now so API actions all share one safe input path.
   app.use(express.json({ limit: '1mb' }));
 
   // Health check — the Phase 1 verifiable checkpoint.
@@ -20,6 +22,9 @@ export function createApp({ tables, serverVersion, protocolVersion }) {
       uptimeSeconds: Math.round(process.uptime()),
     });
   });
+
+  // Dashboard data API. No UI yet — this only proves the server state contract.
+  registerGameRoutes(app, gameStore);
 
   // Unknown routes should return JSON, not an HTML error page.
   app.use((req, res) => {

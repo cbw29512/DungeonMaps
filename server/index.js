@@ -6,6 +6,7 @@ import { createServer } from 'node:http';
 import { loadConfig } from './config.js';
 import { initDb, closeDb } from './db.js';
 import { createApp } from './http.js';
+import { createGameStore } from './store/gamesStore.js';
 import { logError, logInfo } from './logger.js';
 import { PROTOCOL_VERSION } from './sync/protocol.js';
 import { createSyncServer } from './ws.js';
@@ -47,15 +48,18 @@ async function start() {
     registerProcessSafety();
 
     const config = loadConfig();
-    const { path: dbPath, tables } = initDb();
+    const { db, path: dbPath, tables } = initDb();
 
     logInfo('db', 'SQLite ready', { dbPath });
     logInfo('db', 'schema tables ready', { tables });
+
+    const gameStore = createGameStore(db);
 
     const app = createApp({
       tables,
       serverVersion: config.serverVersion,
       protocolVersion: PROTOCOL_VERSION,
+      gameStore,
     });
 
     httpServer = createServer(app);

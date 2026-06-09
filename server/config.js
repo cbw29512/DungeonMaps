@@ -24,6 +24,6 @@ export function loadConfig(env = process.env) {
   return {
     host: readHost(env.HOST),
     port: readPort(env.PORT),
-    serverVersion: '0.1.1',
+    serverVersion: '0.1.2',
   };
 }

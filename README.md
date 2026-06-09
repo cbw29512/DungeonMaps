@@ -2,17 +2,18 @@
 
 Local LAN battle map + token tool for D&D and Call of Cthulhu.
 
-## Phase 1 scope
+## Current checkpoint
 
-This repo is currently at the server-foundation checkpoint only:
+Phase 1 server/state foundation:
 
 - Local Node HTTP server
 - SQLite database bootstrapped from `server/schema.sql`
 - WebSocket `/sync` seam for the future SyncAdapter
-- Health and WebSocket smoke tests
+- Game-card state API for the future DM dashboard
+- Health, WebSocket, and API smoke tests
 - No UI yet
 - No Konva yet
-- No game logic yet
+- No map/token game logic yet
 
 ## Run locally
 
@@ -26,6 +27,12 @@ Health check:
 
 ```text
 http://localhost:5174/health
+```
+
+List dashboard games:
+
+```text
+http://localhost:5174/api/games
 ```
 
 ## Smoke tests
@@ -43,6 +50,7 @@ Expected result:
 
 - `[smoke:http] PASS`
 - `[smoke:ws] PASS`
+- `[smoke:api] PASS`
 
 ## Runtime data
 
@@ -53,3 +61,20 @@ data/dungeonmaps.db
 ```
 
 The `data/` folder is intentionally ignored by Git.
+
+## API checkpoint
+
+Create a game:
+
+```powershell
+Invoke-RestMethod http://localhost:5174/api/games `
+  -Method Post `
+  -ContentType 'application/json' `
+  -Body '{"name":"Saturday D&D","system":"dnd5e"}'
+```
+
+List games:
+
+```powershell
+Invoke-RestMethod http://localhost:5174/api/games
+```
