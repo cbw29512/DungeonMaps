@@ -1,6 +1,6 @@
 {
   "name": "dungeonmaps",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "Local LAN battle map + token tool for D&D and Call of Cthulhu. Phase 1 skeleton.",
@@ -9,7 +9,10 @@
   },
   "scripts": {
     "start": "node --disable-warning=ExperimentalWarning server/index.js",
-    "dev": "node --watch --disable-warning=ExperimentalWarning server/index.js"
+    "dev": "node --watch --disable-warning=ExperimentalWarning server/index.js",
+    "smoke:http": "node scripts/smoke-http.mjs",
+    "smoke:ws": "node scripts/smoke-ws.mjs",
+    "smoke": "npm run smoke:http && npm run smoke:ws"
   },
   "dependencies": {
     "express": "^4.21.2",

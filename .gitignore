@@ -1,8 +1,28 @@
-﻿node_modules/
+# Dependencies
+node_modules/
+
+# Local database (machine-local game state — never committed)
 data/
 *.db
-*.db-shm
+*.db-journal
 *.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# Local map/token files served off disk (Phase 1)
+assets/
+
+# Env / secrets
 .env
-*.zip
+.env.*
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor cruft
 .DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -15,27 +15,32 @@ const SCHEMA_PATH = join(__dirname, 'schema.sql');
 let db = null;
 
 export function initDb() {
-  // Ensure the (gitignored) data directory exists.
-  mkdirSync(DATA_DIR, { recursive: true });
+  try {
+    // Ensure the gitignored data directory exists before SQLite opens the file.
+    mkdirSync(DATA_DIR, { recursive: true });
 
-  db = new DatabaseSync(DB_PATH);
+    db = new DatabaseSync(DB_PATH);
 
-  // Enforce foreign keys (so map-delete-with-tokens is blocked) and use WAL for
-  // continuous, crash-safe persistence during a live session.
-  db.exec('PRAGMA foreign_keys = ON;');
-  db.exec('PRAGMA journal_mode = WAL;');
+    // Foreign keys make SQLite enforce our schema rules instead of trusting UI code.
+    db.exec('PRAGMA foreign_keys = ON;');
 
-  // Apply schema. Every statement is CREATE TABLE IF NOT EXISTS, so this is safe
-  // to run on every boot.
-  const schema = readFileSync(SCHEMA_PATH, 'utf8');
-  db.exec(schema);
+    // WAL improves crash resilience during live sessions.
+    db.exec('PRAGMA journal_mode = WAL;');
 
-  const tables = db
-    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
-    .all()
-    .map((r) => r.name);
+    // Every schema statement is idempotent, so boot can safely re-run it.
+    const schema = readFileSync(SCHEMA_PATH, 'utf8');
+    db.exec(schema);
 
-  return { db, path: DB_PATH, tables };
+    const tables = db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
+      .all()
+      .map((row) => row.name);
+
+    return { db, path: DB_PATH, tables };
+  } catch (error) {
+    closeDb();
+    throw new Error(`Failed to initialize SQLite at ${DB_PATH}: ${error.message}`);
+  }
 }
 
 export function getDb() {
@@ -44,8 +49,11 @@ export function getDb() {
 }
 
 export function closeDb() {
-  if (db) {
+  if (!db) return;
+
+  try {
     db.close();
+  } finally {
     db = null;
   }
 }
