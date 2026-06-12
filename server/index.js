@@ -91,7 +91,15 @@ function shutdown(exitCode = 0) {
   logInfo('sys', 'shutting down');
 
   try {
-    if (wsServer) wsServer.close();
+    if (wsServer) {
+      // Properly handle WebSocket server closure with error checking
+      try {
+        wsServer.close();
+      } catch (error) {
+        logError('sys', 'websocket shutdown failed', error);
+      }
+    }
+    
     if (httpServer) {
       httpServer.close(() => {
         closeDb();
