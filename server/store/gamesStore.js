@@ -80,7 +80,11 @@ export function createGameStore(db) {
           VALUES (?, ?, ?, ?, NULL, NULL, ?, ?)
         `).run(id, name, system, joinToken, timestamp, timestamp);
 
-        return this.getGameById(id);
+        const game = this.getGameById(id);
+        if (!game) {
+          throw new Error('Game was not found after creation');
+        }
+        return game;
       } catch (error) {
         throw new Error(`Could not create game: ${error.message}`);
       }
