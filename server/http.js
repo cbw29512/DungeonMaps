@@ -1,17 +1,30 @@
-// http.js — HTTP routes for the local server.
-// Step 3 adds the first real state API: create/list games for the DM dashboard.
+// http.js — HTTP routes and static dashboard for the local server.
+
+import { fileURLToPath } from 'node:url';
 
 import express from 'express';
 
 import { registerGameRoutes } from './routes/games.js';
 
+const publicDirectory = fileURLToPath(new URL('../public', import.meta.url));
+
 export function createApp({ tables, serverVersion, protocolVersion, gameStore }) {
   const app = express();
+  app.disable('x-powered-by');
 
-  // JSON parsing is enabled now so API actions all share one safe input path.
+  app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    if (req.path === '/health' || req.path.startsWith('/api/')) {
+      res.setHeader('Cache-Control', 'no-store');
+    }
+    next();
+  });
+
   app.use(express.json({ limit: '1mb' }));
 
-  // Health check — the Phase 1 verifiable checkpoint.
   app.get('/health', (_req, res) => {
     res.json({
       ok: true,
@@ -23,15 +36,18 @@ export function createApp({ tables, serverVersion, protocolVersion, gameStore })
     });
   });
 
-  // Dashboard data API. No UI yet — this only proves the server state contract.
   registerGameRoutes(app, gameStore);
 
-  // Unknown routes should return JSON, not an HTML error page.
+  app.use(express.static(publicDirectory, {
+    etag: true,
+    index: 'index.html',
+    maxAge: '1h',
+  }));
+
   app.use((req, res) => {
     res.status(404).json({ ok: false, error: 'not_found', path: req.path });
   });
 
-  // Last-resort HTTP error handler. This protects the process from route errors.
   app.use((err, _req, res, _next) => {
     res.status(500).json({ ok: false, error: 'internal_server_error', message: err.message });
   });
