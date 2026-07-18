@@ -1,0 +1,68 @@
+name: DungeonMaps CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  dashboard:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Check JavaScript syntax
+        run: |
+          find public server scripts -type f \( -name '*.js' -o -name '*.mjs' \) -print0 \
+            | xargs -0 -n1 node --check
+
+      - name: Start isolated test server
+        env:
+          HOST: 127.0.0.1
+          DUNGEONMAPS_DB_PATH: ${{ runner.temp }}/dungeonmaps-ci.db
+        run: |
+          npm start > "${RUNNER_TEMP}/dungeonmaps-server.log" 2>&1 &
+          echo $! > "${RUNNER_TEMP}/dungeonmaps-server.pid"
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:5174/health > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat "${RUNNER_TEMP}/dungeonmaps-server.log"
+          exit 1
+
+      - name: Run HTTP, WebSocket, and API smoke tests
+        env:
+          DUNGEONMAPS_BASE_URL: http://127.0.0.1:5174
+          DUNGEONMAPS_WS_URL: ws://127.0.0.1:5174/sync
+        run: npm run smoke
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Show server log on failure
+        if: failure()
+        run: cat "${RUNNER_TEMP}/dungeonmaps-server.log" || true
+
+      - name: Stop test server
+        if: always()
+        run: |
+          if [ -f "${RUNNER_TEMP}/dungeonmaps-server.pid" ]; then
+            kill "$(cat "${RUNNER_TEMP}/dungeonmaps-server.pid")" || true
+          fi
