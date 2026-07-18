@@ -1,33 +1,32 @@
 // db.js — local SQLite via Node's built-in node:sqlite (no native compilation).
-// Creates ./data/dungeonmaps.db on first run and applies the v4 schema idempotently.
+// Creates ./data/dungeonmaps.db on first run and applies the schema idempotently.
 
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-
-const DATA_DIR = join(__dirname, '..', 'data');
-const DB_PATH = join(DATA_DIR, 'dungeonmaps.db');
+const DEFAULT_DB_PATH = join(__dirname, '..', 'data', 'dungeonmaps.db');
 const SCHEMA_PATH = join(__dirname, 'schema.sql');
 
 let db = null;
 
-export function initDb() {
+export function resolveDbPath(env = process.env) {
+  const configured = env.DUNGEONMAPS_DB_PATH?.trim();
+  return configured ? resolve(configured) : DEFAULT_DB_PATH;
+}
+
+export function initDb(env = process.env) {
+  const dbPath = resolveDbPath(env);
+
   try {
-    // Ensure the gitignored data directory exists before SQLite opens the file.
-    mkdirSync(DATA_DIR, { recursive: true });
+    mkdirSync(dirname(dbPath), { recursive: true });
+    db = new DatabaseSync(dbPath);
 
-    db = new DatabaseSync(DB_PATH);
-
-    // Foreign keys make SQLite enforce our schema rules instead of trusting UI code.
     db.exec('PRAGMA foreign_keys = ON;');
-
-    // WAL improves crash resilience during live sessions.
     db.exec('PRAGMA journal_mode = WAL;');
 
-    // Every schema statement is idempotent, so boot can safely re-run it.
     const schema = readFileSync(SCHEMA_PATH, 'utf8');
     db.exec(schema);
 
@@ -36,10 +35,10 @@ export function initDb() {
       .all()
       .map((row) => row.name);
 
-    return { db, path: DB_PATH, tables };
+    return { db, path: dbPath, tables };
   } catch (error) {
     closeDb();
-    throw new Error(`Failed to initialize SQLite at ${DB_PATH}: ${error.message}`);
+    throw new Error(`Failed to initialize SQLite at ${dbPath}: ${error.message}`);
   }
 }
 
