@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="DungeonMaps is a local-first campaign and battle-map workspace for tabletop game masters."
+    />
+    <meta name="theme-color" content="#07111f" />
+    <title>DungeonMaps | Local-first tabletop control room</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to dashboard</a>
+
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="DungeonMaps home">
+        <span class="brand-mark" aria-hidden="true">DM</span>
+        <span>
+          <strong>DungeonMaps</strong>
+          <small>Local-first tabletop control room</small>
+        </span>
+      </a>
+
+      <div class="status-cluster" aria-label="Server connection status">
+        <span class="status-pill" data-status="http">
+          <i aria-hidden="true"></i>
+          API checking
+        </span>
+        <span class="status-pill" data-status="sync">
+          <i aria-hidden="true"></i>
+          Sync connecting
+        </span>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Campaign operations</p>
+          <h1>Prepare the world. Run the table. Keep everyone in sync.</h1>
+          <p class="hero-summary">
+            Create campaign rooms, keep authoritative game state on the local server,
+            and build toward shared maps and tokens without depending on cloud access.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#create-game">Create a campaign</a>
+            <a class="button button-secondary" href="#campaigns">View campaigns</a>
+          </div>
+        </div>
+
+        <aside class="checkpoint-card" aria-labelledby="checkpoint-title">
+          <p class="eyebrow">Current checkpoint</p>
+          <h2 id="checkpoint-title">Real state, live sync seam, honest scope.</h2>
+          <ul>
+            <li>SQLite-backed campaign records</li>
+            <li>Local WebSocket connection and heartbeat</li>
+            <li>DM campaign creation workflow</li>
+            <li>Map canvas and token tools are the next milestone</li>
+          </ul>
+          <dl class="server-facts">
+            <div>
+              <dt>Server</dt>
+              <dd data-server-version>Checking…</dd>
+            </div>
+            <div>
+              <dt>Protocol</dt>
+              <dd data-protocol-version>Checking…</dd>
+            </div>
+          </dl>
+        </aside>
+      </section>
+
+      <section class="dashboard-section" id="campaigns" aria-labelledby="campaigns-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Campaign library</p>
+            <h2 id="campaigns-title">Your active tables</h2>
+          </div>
+          <button class="text-button" type="button" data-refresh-games>
+            Refresh campaigns
+          </button>
+        </div>
+
+        <div class="notice" role="status" aria-live="polite" data-notice hidden></div>
+        <div class="campaign-grid" data-campaign-grid aria-live="polite"></div>
+      </section>
+
+      <section class="create-section" id="create-game" aria-labelledby="create-title">
+        <div>
+          <p class="eyebrow">New campaign</p>
+          <h2 id="create-title">Open a table in seconds.</h2>
+          <p>
+            The server validates and owns every campaign record. The browser requests an
+            action; it never writes directly to SQLite.
+          </p>
+        </div>
+
+        <form class="create-form" data-create-form>
+          <label>
+            Campaign name
+            <input
+              type="text"
+              name="name"
+              maxlength="80"
+              autocomplete="off"
+              placeholder="Saturday Night at the Crooked Moon"
+              required
+            />
+          </label>
+
+          <label>
+            Game system
+            <select name="system" required>
+              <option value="dnd5e">Dungeons &amp; Dragons 5e</option>
+              <option value="coc">Call of Cthulhu</option>
+            </select>
+          </label>
+
+          <button class="button button-primary" type="submit" data-submit-game>
+            Create campaign
+          </button>
+        </form>
+      </section>
+    </main>
+
+    <footer>
+      <p>DungeonMaps runs on the local network and keeps the server authoritative.</p>
+      <p>Phase 2 target: shared map canvas, tokens, fog of war, and role-aware sessions.</p>
+    </footer>
+
+    <template id="campaign-card-template">
+      <article class="campaign-card">
+        <div class="campaign-card-topline">
+          <span class="system-badge"></span>
+          <span class="campaign-date"></span>
+        </div>
+        <h3></h3>
+        <p class="campaign-state"></p>
+        <dl>
+          <div>
+            <dt>Map</dt>
+            <dd data-map-status></dd>
+          </div>
+          <div>
+            <dt>Join code</dt>
+            <dd data-join-token></dd>
+          </div>
+        </dl>
+        <button class="text-button" type="button" data-copy-token>Copy join code</button>
+      </article>
+    </template>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
