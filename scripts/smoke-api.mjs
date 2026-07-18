@@ -1,4 +1,4 @@
-// smoke-api.mjs — verifies the first real state API: create and list games.
+// smoke-api.mjs — verifies validation plus create/list campaign state.
 
 const baseUrl = process.env.DUNGEONMAPS_BASE_URL ?? 'http://localhost:5174';
 const gameName = `Smoke Test ${new Date().toISOString()}`;
@@ -12,6 +12,16 @@ async function readJson(response) {
 }
 
 try {
+  const invalidResponse = await fetch(`${baseUrl}/api/games`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name: 'Invalid system', system: 'unknown' }),
+  });
+  const invalidBody = await readJson(invalidResponse);
+  if (invalidResponse.status !== 400 || invalidBody.error !== 'bad_request') {
+    throw new Error(`Invalid campaign was not rejected: ${JSON.stringify(invalidBody)}`);
+  }
+
   const createResponse = await fetch(`${baseUrl}/api/games`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -21,6 +31,9 @@ try {
   const createBody = await readJson(createResponse);
   if (createResponse.status !== 201 || createBody.ok !== true) {
     throw new Error(`Create game failed: HTTP ${createResponse.status} ${JSON.stringify(createBody)}`);
+  }
+  if (createResponse.headers.get('cache-control') !== 'no-store') {
+    throw new Error('Campaign API must disable caching.');
   }
 
   const created = createBody.game;
@@ -38,7 +51,7 @@ try {
   if (!found) throw new Error(`Created game ${created.id} was not returned by /api/games.`);
 
   console.log(`[smoke:api] PASS ${baseUrl}/api/games`);
-  console.log(JSON.stringify({ created: found, totalGames: listBody.games.length }, null, 2));
+  console.log(JSON.stringify({ invalidInputRejected: true, created: found, totalGames: listBody.games.length }, null, 2));
 } catch (error) {
   console.error(`[smoke:api] FAIL ${baseUrl}/api/games`);
   console.error(error.message);
