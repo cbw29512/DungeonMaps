@@ -1,0 +1,13 @@
+name: Security Baseline
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  secret-scan:
+    uses: cbw29512/local-ai-workstation-gear/.github/workflows/security-baseline.yml@96377a715c7dd9a05944dc870c44da58a6cfd8f5
